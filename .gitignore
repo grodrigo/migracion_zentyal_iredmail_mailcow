@@ -1,0 +1,15 @@
+# Configuración
+config.py
+migrar_roundcube/config.py
+
+# Datos generados
+*.csv
+*.txt
+*.ldif
+
+# Python
+__pycache__/
+*.pyc
+
+# Archivos temporales
+*.log

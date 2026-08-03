@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""
+config.py.example
+
+Copiar este archivo como config.py y completar los valores
+correspondientes al entorno donde se ejecutará la migración.
+"""
+
+# ==========================================================
+# LDAP origen (Zentyal)
+# ==========================================================
+
+LDAP = {
+    # Servidor LDAP
+    "host": "LDAP_SERVER",
+    "port": 390,
+    "use_ssl": False,
+
+    # Credenciales de lectura
+    "bind_dn": "cn=YOUR_BIND_USER,dc=example,dc=com",
+    "password": "YOUR_LDAP_PASSWORD",
+
+    # Base de búsqueda
+    "base_dn": "dc=example,dc=com",
+
+    # Filtro LDAP
+    "user_filter": "(uid=*)",
+
+    # Atributos requeridos por los scripts
+    "attributes": [
+        "uid",
+        "mail",
+        "userPassword"
+    ]
+}
+
+
+# ==========================================================
+# Roundcube origen (base a normalizar)
+# ==========================================================
+
+OLD_DB = {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "YOUR_DB_USER",
+    "password": "YOUR_DB_PASSWORD",
+    "database": "roundcube_old",
+    "charset": "utf8mb4"
+}
+
+
+# ==========================================================
+# Roundcube destino (bootstrap)
+# ==========================================================
+
+NEW_DB = {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "YOUR_DB_USER",
+    "password": "YOUR_DB_PASSWORD",
+    "database": "roundcubemail",
+    "charset": "utf8mb4"
+}
+
+
+# ==========================================================
+# Ejecución
+# ==========================================================
+
+# True:
+#   Procesa únicamente los usuarios definidos en USUARIOS_POC.
+#
+# False:
+#   Procesa la totalidad de la organización.
+
+MODO_POC = True
+
+
+# ==========================================================
+# Usuarios incluidos durante la PoC
+# ==========================================================
+
+USUARIOS_POC = {
+    "usuario1@example.com",
+    "usuario2@example.com",
+}
+
+
+# ==========================================================
+# Parámetros generales
+# ==========================================================
+
+# Cantidad de operaciones antes de realizar un COMMIT.
+COMMIT_CADA = 500
+
+# Directorio donde se almacenarán los logs.
+LOG_DIR = "logs"

@@ -1,7 +1,26 @@
 #!/usr/bin/env python3
-# migrar_grupos.py
+# migrar_contactos_v2.py
+
+"""
+Migración de contactos Roundcube.
+
+Origen:
+    roundcube_old
+
+Destino:
+    roundcubemail
+
+Este script puede ejecutarse múltiples veces.
+No duplica registros ya migrados.
+Genera la tabla migration_contact_map utilizada posteriormente
+por la migración de grupos y membresías.
+"""
 
 import mysql.connector
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from config import OLD_DB, NEW_DB, MODO_POC, USUARIOS_POC
 
 print("[*] Conectando a bases de datos...")
@@ -13,26 +32,27 @@ old_cur = old_conn.cursor(dictionary=True, buffered=True)
 new_cur = new_conn.cursor(dictionary=True, buffered=True)
 
 # ------------------------------------------------------------
-# Tabla de mapeo para grupos
+# Tabla de mapeo para futuras migraciones de grupos/membresias
 # ------------------------------------------------------------
 
 new_cur.execute("""
-CREATE TABLE IF NOT EXISTS migration_group_map (
-    old_group_id INT UNSIGNED PRIMARY KEY,
-    new_group_id INT UNSIGNED NOT NULL,
-    old_user_id INT NOT NULL,
-    new_user_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS migration_contact_map (
+    old_contact_id INT UNSIGNED PRIMARY KEY,
+    new_contact_id INT UNSIGNED NOT NULL,
+    old_user_id INT UNSIGNED NOT NULL,
+    new_user_id INT UNSIGNED NOT NULL,
     created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
     INDEX(old_user_id),
-    INDEX(new_user_id),
-    INDEX(new_group_id)
+    INDEX(new_contact_id),
+    INDEX(new_user_id)
 )
 """)
 
 new_conn.commit()
 
-grupos_creados = 0
-grupos_existentes = 0
+contactos_creados = 0
+contactos_existentes = 0
 mapeos_creados = 0
 
 print("[*] Cargando usuarios destino...")
@@ -49,19 +69,23 @@ for row in new_cur.fetchall():
 
 print(f"[+] Usuarios destino: {len(usuarios_destino)}")
 
-print("[*] Migrando grupos...")
+print("[*] Migrando contactos...")
 
 old_cur.execute("""
 SELECT
-    cg.contactgroup_id,
-    cg.user_id,
-    cg.changed,
-    cg.del,
-    cg.name,
+    c.contact_id,
+    c.changed,
+    c.del,
+    c.name,
+    c.email,
+    c.firstname,
+    c.surname,
+    c.vcard,
+    u.user_id,
     u.username
-FROM contactgroups cg
+FROM contacts c
 JOIN users u
-  ON u.user_id = cg.user_id
+ON u.user_id=c.user_id
 """)
 
 try:
@@ -76,29 +100,31 @@ try:
         if username not in usuarios_destino:
             continue
 
-        old_group_id = row["contactgroup_id"]
+        old_contact_id = row["contact_id"]
         new_user_id = usuarios_destino[username]
 
-        # ¿Ya existe el mapeo?
+        # Ya existe el mapeo?
         new_cur.execute("""
-            SELECT new_group_id
-            FROM migration_group_map
-            WHERE old_group_id=%s
-        """, (old_group_id,))
+            SELECT new_contact_id
+            FROM migration_contact_map
+            WHERE old_contact_id=%s
+        """, (old_contact_id,))
 
         mapping = new_cur.fetchone()
 
         if mapping:
             continue
 
-        # ¿Ya existe el grupo en destino?
+        # Buscar contacto existente
         new_cur.execute("""
-            SELECT contactgroup_id
-            FROM contactgroups
+            SELECT contact_id
+            FROM contacts
             WHERE user_id=%s
+            AND email=%s
             AND name=%s
         """, (
             new_user_id,
+            row["email"],
             row["name"]
         ))
 
@@ -106,41 +132,46 @@ try:
 
         if existing:
 
-            new_group_id = existing["contactgroup_id"]
-            grupos_existentes += 1
+            new_contact_id = existing["contact_id"]
+            contactos_existentes += 1
 
         else:
 
             new_cur.execute("""
-                INSERT INTO contactgroups
+                INSERT INTO contacts
                 (
-                    user_id,
                     changed,
                     del,
-                    name
+                    name,
+                    email,
+                    firstname,
+                    surname,
+                    vcard,
+                    user_id
                 )
                 VALUES
                 (
-                    %s,
-                    %s,
-                    %s,
-                    %s
+                    %s,%s,%s,%s,%s,%s,%s,%s
                 )
             """, (
-                new_user_id,
                 row["changed"],
                 row["del"],
-                row["name"]
+                row["name"],
+                row["email"],
+                row["firstname"],
+                row["surname"],
+                row["vcard"],
+                new_user_id
             ))
 
-            new_group_id = new_cur.lastrowid
-            grupos_creados += 1
+            new_contact_id = new_cur.lastrowid
+            contactos_creados += 1
 
         new_cur.execute("""
-            INSERT INTO migration_group_map
+            INSERT INTO migration_contact_map
             (
-                old_group_id,
-                new_group_id,
+                old_contact_id,
+                new_contact_id,
                 old_user_id,
                 new_user_id
             )
@@ -152,8 +183,8 @@ try:
                 %s
             )
         """, (
-            old_group_id,
-            new_group_id,
+            old_contact_id,
+            new_contact_id,
             old_user_id,
             new_user_id
         ))
@@ -161,6 +192,7 @@ try:
         mapeos_creados += 1
         if mapeos_creados % 500 == 0:
             new_conn.commit()
+
 
     new_conn.commit()
 
@@ -170,16 +202,16 @@ except Exception:
     raise
 
 finally:
-
     old_cur.close()
     new_cur.close()
 
     old_conn.close()
     new_conn.close()
 
+
 print()
-print(f"[+] Grupos creados: {grupos_creados}")
-print(f"[+] Grupos existentes: {grupos_existentes}")
+print(f"[+] Contactos creados: {contactos_creados}")
+print(f"[+] Contactos existentes: {contactos_existentes}")
 print(f"[+] Mapeos creados: {mapeos_creados}")
 
 print("[+] Finalizado.")

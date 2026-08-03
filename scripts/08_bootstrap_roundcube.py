@@ -5,19 +5,17 @@ import mysql.connector
 
 CSV_FILE = "/root/migration/usuarios_test.csv"
 
-DB_CONFIG = {
-"host": "127.0.0.1",
-"user": "YOUR_DB_USER",
-"password": "YOUR_DB_PASSWORD",
-"database": "roundcubemail"
-}
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from config import NEW_DB
 
 MAIL_HOST = "127.0.0.1"
 LANGUAGE = "es_AR"
 
 print(f"[*] Leyendo usuarios desde: {CSV_FILE}")
 
-conn = mysql.connector.connect(**DB_CONFIG)
+conn = mysql.connector.connect(**NEW_DB)
 cur = conn.cursor()
 
 creados = 0

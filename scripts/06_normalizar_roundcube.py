@@ -11,7 +11,7 @@ SCRIPTS = BASE / "06_scripts_normalizacion"
 PASOS = [
     "06_1_normalizar_usuarios.py",
     "06_2_consolidar_contactos.py",
-    "06_3_consolidar_grupos.py",
+    "06_3_validar_grupos.py",
     "06_4_consolidar_identidades.py",
     "06_5_limpiar_roundcube.py",
 ]

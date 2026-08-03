@@ -2,6 +2,10 @@
 # migrar_identidades.py
 
 import mysql.connector
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from config import OLD_DB, NEW_DB, MODO_POC, USUARIOS_POC
 
 print("[*] Conectando a bases de datos...")

@@ -11,6 +11,13 @@ Genera reportes CSV con las inconsistencias detectadas.
 import csv
 import os
 import mysql.connector
+
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 from config import OLD_DB
 
 OUTDIR="validacion_roundcube"

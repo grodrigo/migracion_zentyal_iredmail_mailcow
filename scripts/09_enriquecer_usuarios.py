@@ -6,7 +6,7 @@ archivo_ldif_salida = '/root/migration/scripts/enriquecer_usuarios.ldif'
 
 # Configuración del entorno LDAP e iRedMail
 BASE_DN = "o=domains,dc=mp,dc=gba,dc=gov,dc=ar"
-DOMINIO_POC = "testmail1.mp.gba.gov.ar"
+# DOMINIO_POC = "testmail1.mp.gba.gov.ar"
 
 print(f"[*] Procesando {archivo_csv} para generar modificaciones LDAP...")
 
@@ -35,7 +35,7 @@ with open(archivo_csv, mode='r', encoding='utf-8') as f_in, \
         dn = f"mail={mail},ou=Users,domainName={dominio_user},{BASE_DN}"
         
         # Construir el shadowAddress dinámico para la POC
-        shadow_address = f"{uid}@{DOMINIO_POC}"
+        # shadow_address = f"{uid}@{DOMINIO_POC}"
         
         # Escribir el bloque de modificación en el archivo LDIF
         f_out.write(f"dn: {dn}\n")

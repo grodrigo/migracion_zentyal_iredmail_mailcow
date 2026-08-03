@@ -1,30 +1,36 @@
 #!/usr/bin/env python3
 """
-06_1_normalizar_usuarios_v3.py
+06_1_normalizar_usuarios.py
 
-Genera migration_user_map a partir de roundcube_old.
-No modifica datos funcionales; únicamente construye el mapa de
-normalización de usuarios.
+Genera user_normalization_map dentro de roundcube_old.
+
+La tabla se utiliza por los siguientes scripts de normalización.
+No modifica datos funcionales; únicamente determina qué user_id
+será el principal para cada dirección de correo.
 """
 
 import csv
 import mysql.connector
-from config import OLD_DB, NEW_DB
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from config import OLD_DB
 
 print("[*] Conectando...")
 
 old_conn = mysql.connector.connect(**OLD_DB)
-new_conn = mysql.connector.connect(**NEW_DB)
 
 old = old_conn.cursor(dictionary=True)
-new = new_conn.cursor(dictionary=True)
 
-print("[*] Recreando migration_user_map...")
+print("[*] Recreando user_normalization_map...")
 
-new.execute("DROP TABLE IF EXISTS migration_user_map")
+old.execute("DROP TABLE IF EXISTS user_normalization_map")
 
-new.execute("""
-CREATE TABLE migration_user_map (
+old.execute("""
+CREATE TABLE user_normalization_map (
     old_user_id INT UNSIGNED PRIMARY KEY,
     new_user_id INT UNSIGNED NOT NULL,
     username_original VARCHAR(255) NOT NULL,
@@ -36,7 +42,7 @@ CREATE TABLE migration_user_map (
 )
 """)
 
-new_conn.commit()
+old_conn.commit()
 
 print("[*] Analizando usuarios...")
 
@@ -60,7 +66,7 @@ for r in rows:
 
 resumen = []
 
-with open("migration_user_map.csv", "w", newline="", encoding="utf-8") as f:
+with open("user_normalization_map.csv", "w", newline="", encoding="utf-8") as f:
 
     w = csv.writer(f)
     w.writerow([
@@ -91,8 +97,8 @@ with open("migration_user_map.csv", "w", newline="", encoding="utf-8") as f:
             if es_principal:
                 principales += 1
 
-            new.execute("""
-                INSERT INTO migration_user_map
+            old.execute("""
+                INSERT INTO user_normalization_map
                 (
                     old_user_id,
                     new_user_id,
@@ -119,14 +125,14 @@ with open("migration_user_map.csv", "w", newline="", encoding="utf-8") as f:
 
             total += 1
 
-new_conn.commit()
+old_conn.commit()
 
 print()
 print(f"[+] Usuarios analizados    : {total}")
 print(f"[+] Usuarios normalizados  : {len(grupos)}")
 print(f"[+] Usuarios principales   : {principales}")
 print(f"[+] Correos duplicados     : {duplicados}")
-print("[+] CSV generado           : migration_user_map.csv")
+print("[+] CSV generado           : user_normalization_map.csv")
 
 if resumen:
     print()
@@ -148,8 +154,6 @@ if resumen:
         print()
 
 old.close()
-new.close()
 old_conn.close()
-new_conn.close()
 
 print("[+] Finalizado.")

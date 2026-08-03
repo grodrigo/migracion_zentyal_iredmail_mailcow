@@ -1,0 +1,20 @@
+OLD_DB = {
+"host": "127.0.0.1",
+"user": "YOUR_DB_USER",
+"password": "YOUR_DB_PASSWORD",
+"database": "roundcube_old"
+}
+
+NEW_DB = {
+"host": "127.0.0.1",
+"user": "YOUR_DB_USER",
+"password": "YOUR_DB_PASSWORD",
+"database": "roundcubemail"
+}
+
+MODO_POC = True
+
+USUARIOS_POC = {
+"unUsuario@unDominio.com",
+"otroUsuario@unDominio.com"
+}

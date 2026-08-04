@@ -19,6 +19,14 @@ Sólo genera un informe por pantalla.
 """
 
 from collections import defaultdict
+import csv
+
+from pathlib import Path
+import sys
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from config import DOMINIOS_INSTITUCIONALES
 
 ARCHIVO = "usuarios.ldif"
 
@@ -153,6 +161,13 @@ sin_cn = [u for u in usuarios if not u.get("cn")]
 
 print(f"Usuarios sin cn: {len(sin_cn)}")
 
+for u in sin_cn:
+
+    print(
+        f"   uid={u.get('uid','')} "
+        f"mail={u.get('mail','')}"
+    )
+
 print()
 
 # ----------------------------------------------------
@@ -194,7 +209,7 @@ for u in usuarios:
     if cn in PRUEBA_CN:
         prueba.append(u)
 
-print(f"Registros de prueba conocidos: {len(prueba)}")
+print(f"Registros de prueba conocidos: {len(prueba)} - {PRUEBA_CN}")
 
 for u in prueba:
 
@@ -205,6 +220,66 @@ for u in prueba:
 
 print()
 
+
+# ----------------------------------------------------
+# Usuarios con dominios no institucionales
+# ----------------------------------------------------
+
+no_institucionales = []
+
+for u in usuarios:
+
+    mail = u.get("mail", "").strip().lower()
+
+    if not mail or "@" not in mail:
+        continue
+
+    dominio = mail.rsplit("@", 1)[1]
+
+    if dominio not in DOMINIOS_INSTITUCIONALES:
+
+        no_institucionales.append({
+            "uid": u.get("uid", ""),
+            "mail": mail,
+            "dominio": dominio,
+            "cn": u.get("cn", "")
+        })
+
+print(f"Usuarios con dominios no institucionales: {len(no_institucionales)}")
+
+for u in no_institucionales:
+    print(f"   {u['mail']}")
+
+if no_institucionales:
+
+    with open(
+        "usuarios_dominios_no_institucionales.csv",
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as f:
+
+        w = csv.writer(f)
+
+        w.writerow([
+            "uid",
+            "mail",
+            "dominio",
+            "cn"
+        ])
+
+        for u in no_institucionales:
+
+            w.writerow([
+                u["uid"],
+                u["mail"],
+                u["dominio"],
+                u["cn"]
+            ])
+
+print()
+
+
 # ----------------------------------------------------
 # Resumen
 # ----------------------------------------------------
@@ -213,11 +288,19 @@ print("=" * 70)
 print("RESUMEN")
 print("=" * 70)
 
-print(f"Usuarios:                 {len(usuarios)}")
-print(f"Correos duplicados:       {len(duplicados)}")
-print(f"employeeNumber duplicados:{len(emp_dup)}")
-print(f"Sin mail:                {len(sin_mail)}")
-print(f"Sin uid:                 {len(sin_uid)}")
-print(f"Sin cn:                  {len(sin_cn)}")
-print(f"Nombre incompleto:       {len(sin_nombre)}")
-print(f"Registros de prueba:     {len(prueba)}")
+print(f"Usuarios.........................: {len(usuarios)}")
+print(f"Correos duplicados...............: {len(duplicados)}")
+print(f"employeeNumber duplicados........: {len(emp_dup)}")
+print(f"Sin mail.........................: {len(sin_mail)}")
+print(f"Sin uid..........................: {len(sin_uid)}")
+print(f"Sin cn...........................: {len(sin_cn)}")
+print(f"Nombre incompleto............... : {len(sin_nombre)}")
+print(f"Registros de prueba..............: {len(prueba)}")
+print(f"Dominios no institucionales......: {len(no_institucionales)}")
+
+print()
+
+print("Archivos generados:")
+
+if no_institucionales:
+    print(" - usuarios_dominios_no_institucionales.csv")

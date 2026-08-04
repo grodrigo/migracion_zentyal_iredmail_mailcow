@@ -95,3 +95,7 @@ COMMIT_CADA = 500
 
 # Directorio donde se almacenarán los logs.
 LOG_DIR = "logs"
+
+DOMINIOS_INSTITUCIONALES = {
+    "example.com",
+}

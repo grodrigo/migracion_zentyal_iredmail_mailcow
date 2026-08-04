@@ -51,4 +51,4 @@ with open("usuarios.csv", "w", newline="", encoding="utf-8") as f:
     for u in usuarios:
         w.writerow(u)
 
-print(f"{len(usuarios)} usuarios exportados")
+print(f"{len(usuarios)} usuarios exportados a usuarios.csv")

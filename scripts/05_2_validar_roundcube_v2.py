@@ -1,11 +1,23 @@
 
 #!/usr/bin/env python3
 """
-05_validar_roundcube.py
+05_2_validar_roundcube.py
 
 Auditoría previa de Roundcube.
 No modifica datos.
-Genera reportes CSV con las inconsistencias detectadas.
+Genera reportes CSV con las inconsistencias detectadas en:
+    validacion_roundcube/
+y un log de ejecución en:
+    logs/
+
+Reportes generados:
+    - usuarios_duplicados.csv
+    - contactos_a_consolidar.csv
+    - identidades_externas.csv
+    - identidades_eliminadas.csv
+    - replyto_externos.csv
+    - bcc_externos.csv
+    - firmas_sospechosas.csv
 """
 
 import csv
@@ -19,6 +31,24 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from config import OLD_DB
+
+import logging
+from datetime import datetime
+
+# Logging
+LOGDIR = Path("logs")
+LOGDIR.mkdir(exist_ok=True)
+
+LOGFILE = LOGDIR / f"05_2_validar_roundcube_{datetime.now():%Y%m%d_%H%M%S}.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler(LOGFILE, encoding="utf8")
+    ]
+)
+# / Logging
 
 OUTDIR="validacion_roundcube"
 os.makedirs(OUTDIR,exist_ok=True)
@@ -40,7 +70,7 @@ def export_csv(name,sql):
             w.writeheader()
             w.writerows(rows)
         else:
-            f.write("")
+            w = csv.writer(f)
     return len(rows)
 
 print("="*72)
@@ -48,7 +78,7 @@ print("VALIDACIÓN PREVIA DE ROUNDCUBE")
 print("="*72)
 
 u=scalar("SELECT COUNT(*) c FROM users")
-uu=scalar("SELECT COUNT(DISTINCT LOWER(username)) c FROM users")
+uu=scalar("SELECT COUNT(DISTINCT TRIM(LOWER(username))) c FROM users")
 c=scalar("SELECT COUNT(*) c FROM contacts")
 g=scalar("SELECT COUNT(*) c FROM contactgroups")
 ia=scalar("SELECT COUNT(*) c FROM identities WHERE del=0")
@@ -58,7 +88,7 @@ SELECT LOWER(username) usuario_normalizado,
 COUNT(*) registros,
 GROUP_CONCAT(user_id ORDER BY user_id) user_ids
 FROM users
-GROUP BY LOWER(username)
+GROUP BY TRIM(LOWER(username))
 HAVING COUNT(*)>1
 """)
 
@@ -113,13 +143,35 @@ FROM identities i JOIN users u USING(user_id)
 WHERE i.del=1
 """)
 
-print(f"\nUsuarios................. {u}")
-print(f"Usuarios únicos.......... {uu}")
-print(f"Contactos................ {c}")
-print(f"Grupos................... {g}")
-print(f"Identidades activas...... {ia}")
+logging.info("Usuarios               : %s", u)
+logging.info("Usuarios únicos        : %s", uu)
+logging.info("Contactos              : %s", c)
+logging.info("Grupos                 : %s", g)
+logging.info("Identidades activas    : %s", ia)
 
-print("\nResultado de la validación")
+print("="*72)
+print("Resumen")
+print("="*72)
+
+print(f"Usuarios               : {u}")
+print(f"Usuarios únicos        : {uu}")
+print(f"Contactos              : {c}")
+print(f"Grupos                 : {g}")
+print(f"Identidades activas    : {ia}")
+
+orphan_groups = scalar("""
+SELECT COUNT(*)
+FROM contactgroupmembers gm
+LEFT JOIN contacts c
+ON gm.contact_id=c.contact_id
+WHERE c.contact_id IS NULL
+""")
+
+print(f"Miembros huérfanos     : {orphan_groups}")
+logging.info("Miembros huérfanos     : %s", orphan_groups)
+
+
+print("\nInconsistencias detectadas")
 checks=[
 ("Usuarios duplicados",dup),
 ("Contactos a consolidar",cons),
@@ -134,10 +186,43 @@ for t,n in checks:
     estado="OK" if n==0 else f"REVISAR ({n})"
     if n: apto=False
     print(f"{t:.<30} {estado}")
+    logging.info("%s -> %s", t, estado)
 
-print("\nEstado general:")
-print("APTO PARA MIGRAR" if apto else "NO APTO PARA MIGRAR")
-print(f"\nReportes CSV: {OUTDIR}/")
+
+print()
+print("="*72)
+print("Resultado")
+print("="*72)
+
+if apto:
+    print("[+] Base apta para iniciar la normalización.")
+    logging.info("Base apta para iniciar la normalización.")
+else:
+    print("[!] Existen observaciones que deben revisarse antes de continuar.")
+    logging.warning("Existen observaciones que deben revisarse.")
+
+print()
+print("=" * 72)
+print("Archivos generados")
+print("=" * 72)
+
+print(f"Directorio de reportes : {OUTDIR}/")
+print("  - usuarios_duplicados.csv")
+print("  - contactos_a_consolidar.csv")
+print("  - identidades_externas.csv")
+print("  - identidades_eliminadas.csv")
+print("  - replyto_externos.csv")
+print("  - bcc_externos.csv")
+print("  - firmas_sospechosas.csv")
+
+print()
+print(f"Log de ejecución       : {LOGFILE}")
+
+logging.info("=" * 60)
+logging.info("Validación finalizada.")
+logging.info("Reportes generados en: %s", OUTDIR)
+logging.info("Los detalles de cada inconsistencia se encuentran en los archivos CSV correspondientes.")
+logging.info("=" * 60)
 
 cur.close()
 conn.close()

@@ -14,6 +14,7 @@ Cambios mínimos:
 
 import csv
 import logging
+import sys
 from pathlib import Path
 from datetime import datetime
 import mysql.connector

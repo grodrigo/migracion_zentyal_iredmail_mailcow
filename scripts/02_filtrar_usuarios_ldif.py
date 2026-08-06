@@ -29,6 +29,8 @@ Sólo se exportan entradas inetOrgPerson.
 """
 
 from pathlib import Path
+from migration_utils import reset_state, mark_step
+reset_state()
 
 #ENTRADA = "ldap_usuarios_completo.ldif"
 ENTRADA = "zentyal-ldap.ldif"
@@ -45,6 +47,14 @@ ATRIBUTOS = [
     "sn",
     "description",
 ]
+
+cur.execute("""
+CREATE TABLE IF NOT EXISTS migration_state (
+    paso VARCHAR(100) PRIMARY KEY,
+    ejecutado TIMESTAMP NOT NULL
+)
+""")
+conn.commit()
 
 
 def escribir_usuario(fout, datos):
@@ -86,3 +96,5 @@ with open(ENTRADA, encoding="utf-8", errors="ignore") as fin, \
             usuario[clave] = valor
 
 print(f"Archivo generado: {SALIDA}")
+
+mark_step("02_filtrar_usuarios_ldif")

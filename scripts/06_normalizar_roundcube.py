@@ -5,6 +5,9 @@ from pathlib import Path
 import subprocess
 import sys
 
+from migration_utils import check_step, mark_step
+check_step("05_2_validar_roundcube_v2")
+
 BASE = Path(__file__).resolve().parent
 SCRIPTS = BASE / "06_scripts_normalizacion"
 
@@ -33,3 +36,5 @@ for paso in PASOS:
 
 print()
 print("[+] Roundcube normalizado correctamente.")
+
+mark_step("06_normalizar_roundcube")

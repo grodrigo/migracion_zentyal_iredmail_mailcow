@@ -21,6 +21,9 @@ Sólo genera un informe por pantalla.
 from collections import defaultdict
 import csv
 
+from migration_utils import check_step, mark_step
+check_step("02_filtrar_usuarios_ldif")
+
 from pathlib import Path
 import sys
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +32,10 @@ if str(ROOT) not in sys.path:
 from config import DOMINIOS_INSTITUCIONALES
 
 ARCHIVO = "usuarios.ldif"
+
+if cur.fetchone() is None:
+    print("[!] Debe ejecutarse previamente 02_filtrar_usuarios_ldif.py")
+    sys.exit(1)
 
 usuarios = []
 actual = {}
@@ -304,3 +311,6 @@ print("Archivos generados:")
 
 if no_institucionales:
     print(" - ./work/usuarios_dominios_no_institucionales.csv")
+
+
+mark_step("03_validar_usuarios_ldif")

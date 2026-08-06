@@ -31,6 +31,9 @@ import mysql.connector
 from pathlib import Path
 import sys
 
+from migration_utils import check_step, mark_step
+check_step("05_1_depurar_usuarios_roundcube")
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -102,12 +105,51 @@ g=scalar("SELECT COUNT(*) c FROM contactgroups")
 ia=scalar("SELECT COUNT(*) c FROM identities WHERE del=0")
 
 dup=export_csv("usuarios_duplicados.csv","""
-SELECT LOWER(username) usuario_normalizado,
-COUNT(*) registros,
-GROUP_CONCAT(user_id ORDER BY user_id) user_ids
-FROM users
-GROUP BY TRIM(LOWER(username))
+SELECT
+    LOWER(u.username) AS usuario_normalizado,
+    COUNT(*) AS registros,
+
+    SUBSTRING_INDEX(
+        GROUP_CONCAT(
+            u.user_id
+            ORDER BY contactos DESC, u.user_id
+        ),
+        ',',
+        1
+    ) AS user_id_principal,
+
+    GROUP_CONCAT(
+        u.user_id
+        ORDER BY contactos DESC, u.user_id
+    ) AS user_ids,
+
+    MAX(contactos) AS contactos_principal,
+
+    SUM(contactos) AS contactos_totales
+
+FROM (
+
+    SELECT
+        u.user_id,
+        u.username,
+        COUNT(c.contact_id) AS contactos
+
+    FROM users u
+    LEFT JOIN contacts c
+      ON c.user_id=u.user_id
+
+    GROUP BY
+        u.user_id,
+        u.username
+
+) u
+
+GROUP BY LOWER(TRIM(u.username))
+
 HAVING COUNT(*)>1
+
+ORDER BY registros DESC,
+         usuario_normalizado;
 """)
 
 cons=export_csv("contactos_a_consolidar.csv","""
@@ -168,13 +210,20 @@ WHERE i.del=1
 ident_dup = export_csv("identidades_duplicadas.csv", """
 SELECT
     u.username,
-    LOWER(TRIM(i.email)) email,
-    COUNT(*) cantidad,
-    GROUP_CONCAT(i.identity_id ORDER BY i.identity_id) identity_ids
+    LOWER(TRIM(i.email)) AS email,
+    COUNT(*) AS cantidad,
+    GROUP_CONCAT(i.identity_id ORDER BY i.identity_id) AS identity_ids,
+    GROUP_CONCAT(i.standard ORDER BY i.identity_id) AS standard,
+    GROUP_CONCAT(i.del ORDER BY i.identity_id) AS del_flags,
+    GROUP_CONCAT(IFNULL(i.name,'') ORDER BY i.identity_id SEPARATOR ' | ') AS nombres,
+    GROUP_CONCAT(IFNULL(i.organization,'') ORDER BY i.identity_id SEPARATOR ' | ') AS organizaciones
 FROM identities i
 JOIN users u USING(user_id)
-GROUP BY u.username, LOWER(TRIM(i.email))
-HAVING COUNT(*) > 1
+GROUP BY
+    u.username,
+    LOWER(TRIM(i.email))
+HAVING COUNT(*)>1
+ORDER BY u.username;
 """)
 
 ident_cfg = export_csv("identidades_con_configuracion_distinta.csv", """
@@ -282,7 +331,7 @@ informativos = [
     ("Usuarios duplicados", dup, "NORMALIZACIÓN AUTOMÁTICA (06_1)"),
     ("Contactos a consolidar", cons, "CONSOLIDACIÓN AUTOMÁTICA (06_2)"),
     ("Identidades duplicadas", ident_dup, "CONSOLIDACIÓN AUTOMÁTICA (06_5)"),
-    ("Configuración distinta", ident_cfg, "SE ANALIZA EN 06_4")
+    ("Configuración distinta", ident_cfg, "SE ANALIZA EN 06_4"),
     ("Identidades eliminadas", idel, "CONSOLIDACIÓN AUTOMÁTICA (06_5)"),
 ]
 
@@ -472,3 +521,5 @@ logging.info("=" * 60)
 
 cur.close()
 conn.close()
+
+mark_step("05_2_validar_roundcube_v2")

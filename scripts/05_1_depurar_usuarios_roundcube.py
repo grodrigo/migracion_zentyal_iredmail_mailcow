@@ -27,6 +27,9 @@ import logging
 import mysql.connector
 from ldap3 import Server, Connection, ALL
 
+from migration_utils import check_step, mark_step
+check_step("04_usuarios")
+
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -35,6 +38,10 @@ from config import OLD_DB, LDAP, LOG_DIR, COMMIT_CADA
 
 import re
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+if cur.fetchone() is None:
+    print("[!] Debe ejecutarse previamente 04_usuarios.py")
+    sys.exit(1)
 
 # ---------------------------------------------------------
 # Argumentos
@@ -397,3 +404,6 @@ else:
         cur.close()
         conn.close()
         ldap.unbind()
+
+
+mark_step("05_1_depurar_usuarios_roundcube")

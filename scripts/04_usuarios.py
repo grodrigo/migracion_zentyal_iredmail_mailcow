@@ -1,4 +1,7 @@
 import csv
+from migration_utils import check_step, mark_step
+
+check_step("03_validar_usuarios_ldif")
 
 usuarios = []
 actual = {}
@@ -52,3 +55,5 @@ with open("./work/usuarios.csv", "w", newline="", encoding="utf-8") as f:
         w.writerow(u)
 
 print(f"{len(usuarios)} usuarios exportados a ./work/usuarios.csv")
+
+mark_step("04_usuarios")

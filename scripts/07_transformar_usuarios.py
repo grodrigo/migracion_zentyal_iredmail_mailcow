@@ -2,9 +2,9 @@ import csv
 
 # Configuración de archivos
 #archivo_origen = '../usuarios_test.csv'
-archivo_origen = 'usuarios.csv'
+archivo_origen = './work/usuarios.csv'
 #archivo_destino = '../usuarios_iredmail.csv'
-archivo_destino = 'usuarios_iredmail.csv'
+archivo_destino = './work/usuarios_iredmail.csv'
 
 # Configuración por defecto para la migración
 PASSWORD_POR_DEFECTO = 'YOUR_DEFAULT_PASSWORD'

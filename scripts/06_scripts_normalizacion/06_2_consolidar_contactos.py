@@ -8,7 +8,7 @@ Cambios mínimos:
 - Comparación TRIM(LOWER()) para email y nombres.
 - Segunda pasada utilizando exactamente el mismo algoritmo.
 - Log más detallado.
-- Generación de contactos_pendientes.csv.
+- Generación de ./work/contactos_pendientes.csv.
 - Sin cambiar la estrategia de búsqueda de la V6.
 """
 
@@ -27,7 +27,7 @@ from config import OLD_DB
 LOGDIR = Path("logs")
 LOGDIR.mkdir(exist_ok=True)
 LOGFILE = LOGDIR / f"06_2_consolidar_contactos_{datetime.now():%Y%m%d_%H%M%S}.log"
-CSVFILE = Path("contactos_pendientes.csv")
+CSVFILE = Path("./work/contactos_pendientes.csv")
 
 logging.basicConfig(
     level=logging.INFO,

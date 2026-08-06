@@ -66,7 +66,7 @@ for r in rows:
 
 resumen = []
 
-with open("user_normalization_map.csv", "w", newline="", encoding="utf-8") as f:
+with open("./work/user_normalization_map.csv", "w", newline="", encoding="utf-8") as f:
 
     w = csv.writer(f)
     w.writerow([
@@ -132,7 +132,7 @@ print(f"[+] Usuarios analizados    : {total}")
 print(f"[+] Usuarios normalizados  : {len(grupos)}")
 print(f"[+] Usuarios principales   : {principales}")
 print(f"[+] Correos duplicados     : {duplicados}")
-print("[+] CSV generado           : user_normalization_map.csv")
+print("[+] CSV generado           : ./work/user_normalization_map.csv")
 
 if resumen:
     print()

@@ -33,7 +33,7 @@ with open("usuarios.ldif", encoding="utf-8") as f:
 if actual:
     usuarios.append(actual)
 
-with open("usuarios.csv", "w", newline="", encoding="utf-8") as f:
+with open("./work/usuarios.csv", "w", newline="", encoding="utf-8") as f:
     campos = [
         "uid",
         "mail",
@@ -51,4 +51,4 @@ with open("usuarios.csv", "w", newline="", encoding="utf-8") as f:
     for u in usuarios:
         w.writerow(u)
 
-print(f"{len(usuarios)} usuarios exportados a usuarios.csv")
+print(f"{len(usuarios)} usuarios exportados a ./work/usuarios.csv")

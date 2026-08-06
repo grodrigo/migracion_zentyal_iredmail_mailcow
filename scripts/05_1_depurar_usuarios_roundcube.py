@@ -188,7 +188,7 @@ print(f"[+] Sólo LDAP      : {len(solo_ldap)}")
 print("[*] Generando CSV...")
 
 with open(
-    "usuarios_a_eliminar.csv",
+    "./work/usuarios_a_eliminar.csv",
     "w",
     newline="",
     encoding="utf8"
@@ -215,7 +215,7 @@ with open(
             ])
 
 with open(
-    "usuarios_solo_ldap.csv",
+    "./work/usuarios_solo_ldap.csv",
     "w",
     newline="",
     encoding="utf8"
@@ -229,7 +229,7 @@ with open(
         w.writerow([username])
 
 with open(
-    "usuarios_comunes.csv",
+    "./work/usuarios_comunes.csv",
     "w",
     newline="",
     encoding="utf8"
@@ -250,9 +250,9 @@ with open(
             ])
 
 print("[+] CSV generados:")
-print("usuarios_a_eliminar.csv")
-print("usuarios_comunes.csv")
-print("usuarios_solo_ldap.csv")
+print("./work/usuarios_a_eliminar.csv")
+print("./work/usuarios_comunes.csv")
+print("./work/usuarios_solo_ldap.csv")
 
 print()
 
@@ -277,7 +277,7 @@ if DRY_RUN:
     print()
     print("[DRY RUN]")
     print("No se realizaron modificaciones.")
-    print("Revise usuarios_a_eliminar.csv antes de ejecutar con --apply.")
+    print("Revise ./work/usuarios_a_eliminar.csv antes de ejecutar con --apply.")
 
 else:
 

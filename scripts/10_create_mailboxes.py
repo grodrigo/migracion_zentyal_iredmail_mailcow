@@ -1,7 +1,7 @@
 import csv
 import subprocess
 
-archivo_csv = 'usuarios_iredmail.csv'
+archivo_csv = './work/usuarios_iredmail.csv'
 
 print(f"[*] Iniciando la creación de buzones desde {archivo_csv}...")
 

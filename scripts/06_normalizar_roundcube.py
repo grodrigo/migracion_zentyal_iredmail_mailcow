@@ -12,8 +12,9 @@ PASOS = [
     "06_1_normalizar_usuarios.py",
     "06_2_consolidar_contactos.py",
     "06_3_validar_grupos.py",
-    "06_4_consolidar_identidades.py",
-    "06_5_limpiar_roundcube.py",
+    "06_4_auditar_identidades.py",
+    "06_5_consolidar_identidades.py",
+    "06_6_eliminar_registros_obsoletos.py",
 ]
 
 for paso in PASOS:

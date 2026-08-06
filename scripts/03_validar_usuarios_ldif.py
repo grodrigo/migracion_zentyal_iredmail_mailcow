@@ -253,7 +253,7 @@ for u in no_institucionales:
 if no_institucionales:
 
     with open(
-        "usuarios_dominios_no_institucionales.csv",
+        "./work/usuarios_dominios_no_institucionales.csv",
         "w",
         newline="",
         encoding="utf-8"
@@ -303,4 +303,4 @@ print()
 print("Archivos generados:")
 
 if no_institucionales:
-    print(" - usuarios_dominios_no_institucionales.csv")
+    print(" - ./work/usuarios_dominios_no_institucionales.csv")

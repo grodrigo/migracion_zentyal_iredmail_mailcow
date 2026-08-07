@@ -48,15 +48,6 @@ ATRIBUTOS = [
     "description",
 ]
 
-cur.execute("""
-CREATE TABLE IF NOT EXISTS migration_state (
-    paso VARCHAR(100) PRIMARY KEY,
-    ejecutado TIMESTAMP NOT NULL
-)
-""")
-conn.commit()
-
-
 def escribir_usuario(fout, datos):
     for campo in ATRIBUTOS:
         if campo in datos:

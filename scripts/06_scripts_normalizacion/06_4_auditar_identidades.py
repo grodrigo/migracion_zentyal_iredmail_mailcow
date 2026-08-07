@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-05_3_auditar_identidades.py
+06_4_auditar_identidades.py
 
 Audita las identidades que quedarían asociadas a un mismo usuario
 luego de la normalización de usuarios.
@@ -22,7 +22,7 @@ Archivos generados
 ------------------
 - identidades_pendientes_revision.csv
 - auditoria_identidades_auto.csv
-
+- identidades_duplicadas_principal.csv
 """
 
 import csv
@@ -34,7 +34,7 @@ import mysql.connector
 
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from config import OLD_DB
@@ -431,12 +431,45 @@ for idx, usuario in enumerate(usuarios, 1):
         })
 
 # ------------------------------------------------------------
+# Auditoría adicional:
+# identities duplicadas dentro del mismo usuario
+# ------------------------------------------------------------
+
+cur.execute("""
+SELECT
+    u.username,
+    i.user_id,
+    LOWER(TRIM(i.email)) AS email,
+    COUNT(*) AS cantidad,
+    GROUP_CONCAT(
+        i.identity_id
+        ORDER BY i.standard DESC, i.identity_id
+    ) AS identity_ids
+FROM identities i
+JOIN users u
+    ON u.user_id = i.user_id
+WHERE i.del = 0
+GROUP BY
+    i.user_id,
+    LOWER(TRIM(i.email))
+HAVING COUNT(*) > 1
+ORDER BY
+    u.username,
+    email
+""")
+
+duplicadas_internas = cur.fetchall()
+
+
+# ------------------------------------------------------------
 # Generar CSV
 # ------------------------------------------------------------
 
 CSVFILE = Path("validacion_roundcube") / "identidades_pendientes_revision.csv"
 
 CSV_AUTO = Path("validacion_roundcube") / "auditoria_identidades_auto.csv"
+
+CSV_DUP = Path("validacion_roundcube") / "identidades_duplicadas_principal.csv"
 
 logging.info("Generando reportes...")
 
@@ -486,21 +519,44 @@ with open(
 
     writer.writerows(revision_manual)
 
-    with open(
-        CSV_AUTO,
-        "w",
-        newline="",
-        encoding="utf-8"
-    ) as f:
+with open(
+    CSV_AUTO,
+    "w",
+    newline="",
+    encoding="utf-8"
+) as f:
 
-        writer = csv.DictWriter(
-            f,
-            fieldnames=campos
-        )
+    writer = csv.DictWriter(
+        f,
+        fieldnames=campos
+    )
 
-        writer.writeheader()
+    writer.writeheader()
 
-        writer.writerows(automaticas)
+    writer.writerows(automaticas)
+
+
+with open(
+    CSV_DUP,
+    "w",
+    newline="",
+    encoding="utf-8"
+) as f:
+
+    writer = csv.DictWriter(
+        f,
+        fieldnames=[
+            "username",
+            "user_id",
+            "email",
+            "cantidad",
+            "identity_ids",
+        ]
+    )
+
+    writer.writeheader()
+
+    writer.writerows(duplicadas_internas)
 
 # ------------------------------------------------------------
 # Resumen
@@ -522,10 +578,11 @@ print(f"Usuarios analizados        : {len(usuarios)}")
 print(f"Identidades a consolidar   : {total_conflictos}")
 print(f"Consolidación automática   : {aptos}")
 print(f"Requieren revisión manual  : {revision}")
+print(f"Duplicadas internas        : {len(duplicadas_internas)}")
 
 print()
 
-if revision == 0:
+if revision == 0 and len(duplicadas_internas) == 0:
     print("Estado final           : APTO")
 else:
     print("Estado final           : NO APTO")
@@ -542,6 +599,10 @@ logging.info("Identidades a consolidar    : %d", total_conflictos)
 logging.info("Consolidación automática    : %d", aptos)
 logging.info("Requieren revisión manual   : %d", revision)
 logging.info("CSV generado                : %s", CSVFILE)
+logging.info(
+    "Duplicadas internas        : %d",
+    len(duplicadas_internas)
+)
 logging.info("=" * 60)
 
 
@@ -553,7 +614,7 @@ print()
 print("Acciones recomendadas")
 print("---------------------")
 
-if revision == 0:
+if revision == 0 and len(duplicadas_internas) == 0:
 
     print("[+] No existen conflictos manuales.")
     print("[+] Puede ejecutarse todo 06_ (donde también está 06_4_consolidar_identidades.py)")
@@ -570,6 +631,8 @@ else:
 
     print()
     print(f"[ ] Revisar {CSVFILE}")
+    if duplicadas_internas:
+        print(f"[ ] Revisar {CSV_DUP}")
 
     print("""
     Para resolver cada conflicto:
@@ -598,10 +661,16 @@ else:
         SET del=1
         WHERE identity_id=<identity_id>;
 
+    5- Además revisar identidades_duplicadas_principal.csv
+       (poseen múltiples identities activas con el mismo correo electrónico
+        antes de la consolidación)
+        Conservar únicamente la identity correcta y marcar las
+        restantes como eliminadas.
+
     5. Ejecutar nuevamente:
 
         06_4_auditar_identidades.py
-
+    
     El proceso podrá continuar únicamente cuando no existan
     registros pendientes de revisión.
     """)

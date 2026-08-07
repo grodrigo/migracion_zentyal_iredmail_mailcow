@@ -95,7 +95,7 @@ with open(CSV_REVISION, encoding="utf8") as f:
 pendientes = lineas - 1
 if pendientes > 0:
     print(f"[!] Existen {pendientes} identidades pendientes de revisión.")
-    print("[!] Ejecute nuevamente 05_3_auditar_identidades.py.")
+    print("[!] Ejecute nuevamente 06_4_auditar_identidades.py.")
     sys.exit(1)
 
 conn = mysql.connector.connect(**OLD_DB)

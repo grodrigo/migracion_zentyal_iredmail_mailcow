@@ -39,10 +39,6 @@ from config import OLD_DB, LDAP, LOG_DIR, COMMIT_CADA
 import re
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
-if cur.fetchone() is None:
-    print("[!] Debe ejecutarse previamente 04_usuarios.py")
-    sys.exit(1)
-
 # ---------------------------------------------------------
 # Argumentos
 # ---------------------------------------------------------

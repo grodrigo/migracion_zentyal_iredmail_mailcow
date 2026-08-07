@@ -33,10 +33,6 @@ from config import DOMINIOS_INSTITUCIONALES
 
 ARCHIVO = "usuarios.ldif"
 
-if cur.fetchone() is None:
-    print("[!] Debe ejecutarse previamente 02_filtrar_usuarios_ldif.py")
-    sys.exit(1)
-
 usuarios = []
 actual = {}
 

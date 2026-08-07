@@ -488,8 +488,7 @@ else:
 
     print()
     print("Una vez realizadas las correcciones anteriores ejecute 06_normalizar_roundcube.py:")
-    print()
-    print("    que ejecutará 06_4_auditar_identidades.py")
+    print("    (que ejecutará 06_4_auditar_identidades.py)")
 
 
 print()
